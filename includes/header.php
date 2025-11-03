@@ -1,51 +1,83 @@
+<?php
+// includes/header.php
+// ATTENTION : init.php doit déjà être inclus par la page appelante
+$role = current_user_role();      // etudiant | entreprise | admin | null
+$user = current_user();
+
+// helper active
+function active_link(string $path): string {
+  $uri = strtok($_SERVER['REQUEST_URI'] ?? '', '?'); // /altconnect/...
+  return ($uri === $path) ? ' class="active"' : '';
+}
+?>
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <title>AltConnect</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0}
-    header{background:#164BBA;color:#fff}
-    nav{max-width:1100px;margin:0 auto;display:flex;gap:16px;align-items:center;padding:14px}
-    nav a{color:#fff;text-decoration:none;opacity:.95}
-    nav a:hover{text-decoration:underline}
-    .grow{flex:1}
-    main{max-width:1100px;margin:18px auto;padding:0 12px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #d0d7ff;background:#e8eeff}
-    .card{border:1px solid #e5e7eb;border-radius:12px;padding:16px}
-  </style>
+ <link rel="stylesheet"
+      href="<?= BASE ?>/assets/css/style.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'].'/assets/css/style.css') ?>">
 </head>
 <body>
-<header>
-  <nav>
-    <strong style="font-size:18px">AltConnect</strong>
-    <a href="index.php">Accueil</a>
-    <a href="offres.php">Offres</a>
-    <a href="blog.php">Blog</a>
-    <a href="stats.php">Statistiques</a>
 
-    <div class="grow"></div>
+<header class="topbar">
+  <div class="container topbar-inner">
 
-    <?php if (!empty($_SESSION['user_id'])): ?>
-      <?php $role = current_user_role(); ?>
+    <!-- Logo à gauche -->
+    <a href="<?= BASE ?>/index.php" class="logo-left">
+      <img src="<?= BASE ?>/assets/images/logo-altconnect.png" alt="AltConnect" class="logo-img">
+    </a>
 
-      <?php if ($role === 'admin'): ?>
-        <a href="entreprises_list.php">Entreprises</a> |
-        <a href="dashboard_admin.php">Tableau de bord</a> |
-      <?php elseif ($role === 'recruteur'): ?>
-        <a href="dashboard_entreprise.php">Mon espace</a> |
+    <!-- Menu centre -->
+    <nav class="mainnav" role="navigation">
+      <a<?= active_link(BASE.'/index.php') ?> href="<?= BASE ?>/index.php">Accueil</a>
+      <a<?= active_link(BASE.'/offres/offres_list.php') ?> href="<?= BASE ?>/offres/offres_list.php">Offres</a>
+      <a<?= active_link(BASE.'/blog.php') ?> href="<?= BASE ?>/blog.php">Blog</a>
+      <a<?= active_link(BASE.'/stats.php') ?> href="<?= BASE ?>/stats.php">Statistiques</a>
+
+      <?php if ($role === 'entreprise'): ?>
+        <a<?= active_link(BASE.'/offres/offres_new.php') ?> href="<?= BASE ?>/offres/offres_new.php">Publier</a>
+        <a href="<?= BASE ?>/offres/offres_list.php">Mes offres</a>
       <?php elseif ($role === 'etudiant'): ?>
-        <a href="dashboard_etudiant.php">Mon espace</a> |
+        <a href="<?= BASE ?>/mes_candidatures.php">Mes candidatures</a>
+      <?php elseif ($role === 'admin'): ?>
+        <a href="<?= BASE ?>/admin_users.php">Utilisateurs</a>
       <?php endif; ?>
+    </nav>
 
-      <a href="logout.php">Déconnexion</a>
+    <!-- Droite -->
+    <div class="auth">
+      <?php if (!$user): ?>
+        <a class="btn-outline" href="<?= BASE ?>/login.php">Connexion</a>
+        <a class="btn" href="<?= BASE ?>/choose_role.php">Inscription</a>
+      <?php else: ?>
+        <?php
+          $dest = ($role==='admin')
+                  ? BASE.'/dashboard_admin.php'
+                  : (($role==='entreprise') ? BASE.'/dashboard_entreprise.php' : BASE.'/dashboard_etudiant.php');
+        ?>
+        <a class="btn-outline" href="<?= $dest ?>">Mon espace</a>
+        <a class="btn" href="<?= BASE ?>/logout.php">Déconnexion</a>
+      <?php endif; ?>
+    </div>
 
-    <?php else: ?>
-      <a href="login.php">Connexion</a> /
-      <a href="choose_role.php">Inscription</a>
-    <?php endif; ?>
-  </nav>
+  </div>
 </header>
-<main>
+
+<main class="container page <?= isset($page_class) ? htmlspecialchars($page_class) : '' ?>">
+  <?php if (!empty($_SESSION['flash_success'])): ?>
+  <div class="alert alert-success">
+    <?= htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES) ?>
+  </div>
+  <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['flash_error'])): ?>
+  <div class="alert alert-error">
+    <?= htmlspecialchars($_SESSION['flash_error'], ENT_QUOTES) ?>
+  </div>
+  <?php unset($_SESSION['flash_error']); ?>
+<?php endif; ?>
+
+
